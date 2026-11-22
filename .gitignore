@@ -1,0 +1,16 @@
+# Configuration clasp
+.clasp.json
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Dépendances Node.js (si utilisation d'outils locaux)
+node_modules/
+package-lock.json
+
+# Fichiers d'environnement & logs
+.env
+.env.*
+*.log

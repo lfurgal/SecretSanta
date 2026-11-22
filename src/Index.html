@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎅 Secret Santa</title>
+  <style>
+    /* Reset & variables */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #172554 100%);
+      --card-bg: rgba(255, 255, 255, 0.98);
+      --card-border: rgba(255, 255, 255, 0.2);
+      --primary: #dc2626;
+      --primary-hover: #b91c1c;
+      --primary-active: #991b1b;
+      --primary-glow: rgba(220, 38, 38, 0.35);
+      --accent-gold: #f59e0b;
+      --accent-green: #059669;
+      --text-main: #1f2937;
+      --text-muted: #4b5563;
+      --text-light: #9ca3af;
+      --border-color: #e5e7eb;
+      --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+      --radius-lg: 1.25rem;
+      --radius-md: 0.75rem;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background: var(--bg-gradient);
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(1rem, 4vw, 1.5rem);
+      color: var(--text-main);
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Flocons décoratifs en CSS pur */
+    .snow-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+      opacity: 0.6;
+    }
+
+    .snowflake {
+      position: absolute;
+      top: -10%;
+      color: #ffffff;
+      user-select: none;
+      animation-name: snowfall;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+    }
+
+    .snowflake:nth-child(1) { left: 10%; font-size: 1.2rem; animation-duration: 9s; animation-delay: 0s; }
+    .snowflake:nth-child(2) { left: 25%; font-size: 0.8rem; animation-duration: 12s; animation-delay: 2s; }
+    .snowflake:nth-child(3) { left: 45%; font-size: 1.4rem; animation-duration: 10s; animation-delay: 1s; }
+    .snowflake:nth-child(4) { left: 65%; font-size: 0.9rem; animation-duration: 11s; animation-delay: 3s; }
+    .snowflake:nth-child(5) { left: 80%; font-size: 1.1rem; animation-duration: 8s; animation-delay: 1.5s; }
+    .snowflake:nth-child(6) { left: 92%; font-size: 0.7rem; animation-duration: 13s; animation-delay: 4s; }
+
+    @keyframes snowfall {
+      0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 0.8;
+      }
+      100% {
+        transform: translateY(115vh) rotate(360deg);
+        opacity: 0.1;
+      }
+    }
+
+    /* Carte principale */
+    .app-card {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 440px;
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: clamp(1.5rem, 5vw, 2.25rem);
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    /* En-tête */
+    .header {
+      text-align: center;
+      margin-bottom: 1.75rem;
+    }
+
+    .badge-festive {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: rgba(220, 38, 38, 0.1);
+      color: var(--primary);
+      font-size: 0.825rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      margin-bottom: 0.75rem;
+    }
+
+    .title {
+      font-size: clamp(1.5rem, 5vw, 1.85rem);
+      font-weight: 800;
+      color: #111827;
+      line-height: 1.25;
+      margin-bottom: 0.4rem;
+    }
+
+    .subtitle {
+      font-size: clamp(0.9rem, 2.8vw, 0.975rem);
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* Formulaire */
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 0.5rem;
+    }
+
+    /* Select avec min-height et font-size >= 16px contre le zoom iOS */
+    .select-wrapper {
+      position: relative;
+    }
+
+    .select-input {
+      width: 100%;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-color: #ffffff;
+      border: 1.5px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.85rem 2.5rem 0.85rem 1rem;
+      font-size: 16px; /* Empêche le zoom auto iOS Safari */
+      font-family: inherit;
+      color: var(--text-main);
+      font-weight: 500;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+
+    .select-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+    }
+
+    .select-input:disabled {
+      background-color: #f3f4f6;
+      color: var(--text-light);
+      cursor: not-allowed;
+      border-color: #e5e7eb;
+    }
+
+    .select-chevron {
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      width: 1rem;
+      height: 1rem;
+      color: var(--text-muted);
+    }
+
+    /* Bouton principal */
+    .btn-draw {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background: var(--primary);
+      color: #ffffff;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 0.95rem 1.5rem;
+      font-size: 16px; /* Empêche le zoom auto iOS Safari */
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 4px 14px var(--primary-glow);
+      transition: all 0.2s ease;
+      outline: none;
+    }
+
+    .btn-draw:hover:not(:disabled) {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px var(--primary-glow);
+    }
+
+    .btn-draw:active:not(:disabled) {
+      background: var(--primary-active);
+      transform: translateY(0);
+    }
+
+    .btn-draw:disabled {
+      background: #9ca3af;
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: none;
+      opacity: 0.8;
+    }
+
+    /* Spinner animé */
+    .spinner {
+      width: 1.15rem;
+      height: 1.15rem;
+      border: 2.5px solid rgba(255, 255, 255, 0.35);
+      border-radius: 50%;
+      border-top-color: #ffffff;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Notifications & Alertes */
+    .alert {
+      padding: 0.875rem 1rem;
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      line-height: 1.45;
+      margin-top: 1.25rem;
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .alert-error {
+      background-color: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+    }
+
+    /* Zone de Résultat */
+    .result-container {
+      display: none;
+      margin-top: 1.5rem;
+      animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .result-card {
+      background: linear-gradient(145deg, #ffffff 0%, #fdf2f2 100%);
+      border: 2px dashed #f87171;
+      border-radius: var(--radius-md);
+      padding: 1.5rem 1.25rem;
+      text-align: center;
+    }
+
+    .result-icon {
+      font-size: 2.5rem;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+      display: block;
+      animation: bounce 1.8s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    .result-subtitle {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--primary);
+      margin-bottom: 0.35rem;
+    }
+
+    .result-name {
+      font-size: clamp(1.6rem, 5.5vw, 2.1rem);
+      font-weight: 900;
+      color: #111827;
+      word-break: break-word;
+      line-height: 1.2;
+      margin-bottom: 0.75rem;
+    }
+
+    .result-footer {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      border-top: 1px solid rgba(248, 113, 113, 0.25);
+      padding-top: 0.75rem;
+      margin-top: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+    }
+
+    /* Indicateur de chargement initial */
+    .loading-notice {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      padding: 0.5rem 0;
+    }
+
+    .mini-spinner {
+      width: 0.95rem;
+      height: 0.95rem;
+      border: 2px solid #e5e7eb;
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.96) translateY(6px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Décoration de Noël subtile -->
+  <div class="snow-bg" aria-hidden="true">
+    <div class="snowflake">❄</div>
+    <div class="snowflake">❅</div>
+    <div class="snowflake">❆</div>
+    <div class="snowflake">❄</div>
+    <div class="snowflake">❅</div>
+    <div class="snowflake">❆</div>
+  </div>
+
+  <main class="app-card">
+    <header class="header">
+      <div class="badge-festive">
+        <span>✨</span> Édition de Noël <span>🎄</span>
+      </div>
+      <h1 class="title">Secret Santa</h1>
+      <p class="subtitle">Sélectionne ton prénom pour découvrir à qui tu offres un cadeau !</p>
+    </header>
+
+    <!-- Zone de sélection -->
+    <div class="form-group">
+      <label for="participantSelect" class="label">Qui es-tu ?</label>
+      <div class="select-wrapper">
+        <select id="participantSelect" class="select-input" disabled aria-label="Choisir un participant">
+          <option value="" disabled selected>Chargement des participants...</option>
+        </select>
+        <svg class="select-chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+        </svg>
+      </div>
+      <div id="loadingNotice" class="loading-notice">
+        <span class="mini-spinner" aria-hidden="true"></span>
+        <span>Connexion à la feuille Google Sheets...</span>
+      </div>
+    </div>
+
+    <!-- Bouton d'action -->
+    <button id="drawBtn" class="btn-draw" type="button" disabled>
+      <span id="btnIcon" aria-hidden="true">🎁</span>
+      <span id="btnText">Tirer au sort</span>
+    </button>
+
+    <!-- Message d'erreur -->
+    <div id="errorBox" class="alert alert-error" role="alert" aria-live="assertive"></div>
+
+    <!-- Carte de Résultat -->
+    <section id="resultSection" class="result-container" aria-live="polite">
+      <div class="result-card">
+        <span class="result-icon" aria-hidden="true">🎉</span>
+        <p class="result-subtitle">Tu offres un cadeau à</p>
+        <h2 id="targetName" class="result-name">---</h2>
+        <div class="result-footer">
+          <span>🤫</span>
+          <span>Chut... Garde la surprise jusqu'au jour J !</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      'use strict';
+
+      // Références aux éléments du DOM
+      var participantSelect = document.getElementById('participantSelect');
+      var loadingNotice = document.getElementById('loadingNotice');
+      var drawBtn = document.getElementById('drawBtn');
+      var btnText = document.getElementById('btnText');
+      var btnIcon = document.getElementById('btnIcon');
+      var errorBox = document.getElementById('errorBox');
+      var resultSection = document.getElementById('resultSection');
+      var targetName = document.getElementById('targetName');
+
+      /**
+       * Échappe les caractères HTML dangereux
+       */
+      function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      /**
+       * Affiche une erreur dans l'interface
+       */
+      function showError(message) {
+        errorBox.textContent = message;
+        errorBox.style.display = 'block';
+      }
+
+      /**
+       * Masque l'erreur
+       */
+      function hideError() {
+        errorBox.style.display = 'none';
+        errorBox.textContent = '';
+      }
+
+      /**
+       * Masque le résultat
+       */
+      function hideResult() {
+        resultSection.style.display = 'none';
+        targetName.textContent = '---';
+      }
+
+      /**
+       * Initialisation : chargement des participants depuis Google Apps Script
+       */
+      function loadParticipants() {
+        hideError();
+        hideResult();
+
+        if (typeof google === 'undefined' || !google.script || !google.script.run) {
+          showError("L'environnement Google Apps Script est introuvable. Ouvrez cette page via l'URL Web App Google Apps Script.");
+          loadingNotice.style.display = 'none';
+          return;
+        }
+
+        google.script.run
+          .withSuccessHandler(onParticipantsLoaded)
+          .withFailureHandler(onParticipantsError)
+          .getParticipants();
+      }
+
+      /**
+       * Succès de la récupération des participants
+       * Remarque stricte : la liste est brute (string[]). Tous les prénoms s'affichent
+       * de manière strictement identique sans mention de statut pour préserver le secret.
+       */
+      function onParticipantsLoaded(names) {
+        loadingNotice.style.display = 'none';
+
+        if (!names || !Array.isArray(names) || names.length === 0) {
+          participantSelect.innerHTML = '<option value="" disabled selected>Aucun participant disponible</option>';
+          participantSelect.disabled = true;
+          drawBtn.disabled = true;
+          showError("Aucun participant n'a été trouvé. Veuillez saisir les prénoms en colonne A de la feuille Google Sheets.");
+          return;
+        }
+
+        // Construction du menu déroulant
+        var html = '<option value="" disabled selected>-- Choisis ton prénom --</option>';
+        for (var i = 0; i < names.length; i++) {
+          var safeName = escapeHtml(names[i]);
+          html += '<option value="' + safeName + '">' + safeName + '</option>';
+        }
+
+        participantSelect.innerHTML = html;
+        participantSelect.disabled = false;
+      }
+
+      /**
+       * Erreur lors du chargement des participants
+       */
+      function onParticipantsError(err) {
+        loadingNotice.style.display = 'none';
+        var msg = (err && err.message) ? err.message : "Impossible de charger la liste des participants.";
+        showError("Erreur : " + msg);
+      }
+
+      /**
+       * Écouteur de changement sur le menu déroulant
+       */
+      participantSelect.addEventListener('change', function () {
+        hideError();
+        hideResult();
+
+        var selected = participantSelect.value;
+        if (selected && selected.trim().length > 0) {
+          drawBtn.disabled = false;
+        } else {
+          drawBtn.disabled = true;
+        }
+      });
+
+      /**
+       * Clic sur le bouton Tirer au sort
+       */
+      drawBtn.addEventListener('click', function () {
+        var selected = participantSelect.value;
+        if (!selected || !selected.trim()) {
+          showError("Veuillez d'abord sélectionner votre prénom.");
+          return;
+        }
+
+        hideError();
+        hideResult();
+
+        // Verrouillage de l'UI pendant l'appel serveur
+        participantSelect.disabled = true;
+        drawBtn.disabled = true;
+        btnIcon.innerHTML = '<span class="spinner" aria-hidden="true"></span>';
+        btnText.textContent = 'Tirage en cours...';
+
+        google.script.run
+          .withSuccessHandler(onDrawSuccess)
+          .withFailureHandler(onDrawError)
+          .tirerAuSort(selected);
+      });
+
+      /**
+       * Succès du tirage au sort (ou restitution idempotente)
+       */
+      function onDrawSuccess(response) {
+        // Rétablissement de l'état interactif
+        participantSelect.disabled = false;
+        drawBtn.disabled = false;
+        btnIcon.textContent = '🎁';
+        btnText.textContent = 'Tirer au sort';
+
+        if (!response) {
+          showError("Réponse invalide du serveur.");
+          return;
+        }
+
+        if (response.ok && response.cible) {
+          // Affichage du résultat
+          targetName.textContent = response.cible;
+          resultSection.style.display = 'block';
+          // Défilement doux vers le résultat sur petit écran
+          resultSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+          var errorMsg = response.error || "Une erreur est survenue lors du tirage.";
+          showError(errorMsg);
+        }
+      }
+
+      /**
+       * Erreur réseau ou exception Apps Script lors du tirage
+       */
+      function onDrawError(err) {
+        participantSelect.disabled = false;
+        drawBtn.disabled = false;
+        btnIcon.textContent = '🎁';
+        btnText.textContent = 'Tirer au sort';
+
+        var msg = (err && err.message) ? err.message : "Erreur lors de la communication avec le serveur.";
+        showError("Erreur : " + msg);
+      }
+
+      // Initialiser au chargement du DOM
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadParticipants);
+      } else {
+        loadParticipants();
+      }
+    })();
+  </script>
+</body>
+</html>
